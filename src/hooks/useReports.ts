@@ -3,10 +3,11 @@ import { listReports } from '../services/api';
 import { format } from 'date-fns';
 
 interface Report {
-  name: string;
-  path: string;
-  lastModified: string;
-  size: number;
+  id: string;
+  title: string;
+  type: string;
+  size: string;
+  timestamp: Date;
 }
 
 export function useReports(selectedDate: Date | null) {
@@ -23,7 +24,30 @@ export function useReports(selectedDate: Date | null) {
     setError(null);
     const prefix = format(selectedDate, 'yyyy/MM/dd');
     listReports(prefix)
-      .then(setReports)
+      .then((apiReports) => {
+        const mapped = apiReports.map((r: any, idx: number) => {
+          // Guess type from extension
+          let type = 'OTHER';
+          if (r.name.endsWith('.pdf')) type = 'PDF';
+          else if (r.name.endsWith('.xlsx')) type = 'XLSX';
+          else if (r.name.endsWith('.docx')) type = 'DOCX';
+          // Format size
+          let sizeStr = r.size;
+          if (typeof r.size === 'number') {
+            if (r.size > 1024 * 1024) sizeStr = (r.size / (1024 * 1024)).toFixed(1) + ' MB';
+            else if (r.size > 1024) sizeStr = (r.size / 1024).toFixed(1) + ' KB';
+            else sizeStr = r.size + ' B';
+          }
+          return {
+            id: r.path || r.name || String(idx),
+            title: r.name,
+            type,
+            size: sizeStr,
+            timestamp: r.lastModified ? new Date(r.lastModified) : new Date(),
+          };
+        });
+        setReports(mapped);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [selectedDate]);

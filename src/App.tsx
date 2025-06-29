@@ -1,134 +1,52 @@
 import React, { useCallback } from 'react';
-import { Container, Typography, Box, CircularProgress, Paper, useTheme, Grid } from '@mui/material';
+import { Box, Paper, useMediaQuery, useTheme } from '@mui/material';
 import Calendar from './components/Calendar/Calendar';
 import ReportsList from './components/Reports/ReportsList';
 import { useCalendar } from './hooks/useCalendar';
 import { useReports } from './hooks/useReports';
-import { getPresignedUrl } from './services/api';
 import { format } from 'date-fns';
 
-interface Report {
-  name: string;
-  path: string;
-  lastModified: string;
-  size: number;
-}
+const HEADER_HEIGHT = 0;
 
 const App: React.FC = () => {
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const { selectedDate, setSelectedDate, reportCounts, loading: calendarLoading } = useCalendar();
   const { reports, loading: reportsLoading, error } = useReports(selectedDate);
-  const theme = useTheme();
-
-  const handleDownload = useCallback(async (report: Report) => {
-    if (!selectedDate) return;
-    // Fix timezone issue by using local date formatting instead of toISOString()
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-    try {
-      const url = await getPresignedUrl(dateStr, report.name);
-      window.open(url, '_blank');
-    } catch (e) {
-      alert('Failed to get download link');
-    }
-  }, [selectedDate]);
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
   }, [setSelectedDate]);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Container maxWidth={false} sx={{ py: 3, px: 3 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            S3 Report Browser
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
-            Browse and download CSV reports by date
-          </Typography>
-        </Box>
-
-        {/* Main Content */}
-        <Box sx={{ display: 'flex', gap: 3, height: 'calc(100vh - 200px)' }}>
-          {/* Reports Panel - Left Side (Vertical Rectangle) */}
-          <Box sx={{ width: '30%', minWidth: 300 }}>
-            <Paper 
-              elevation={1} 
-              sx={{ 
-                height: '100%', 
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                border: '1px solid',
-                borderColor: 'divider'
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Reports
-                {selectedDate && (
-                  <Typography component="span" variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
-                    ({format(selectedDate, 'MMM dd, yyyy')})
-                  </Typography>
-                )}
-              </Typography>
-              
-              <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                <ReportsList 
-                  reports={reports} 
-                  selectedDate={selectedDate}
-                  loading={reportsLoading}
-                  error={error}
-                />
-              </Box>
-            </Paper>
-          </Box>
-
-          {/* Calendar Panel - Right Side (Square) */}
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Box sx={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-            }}>
-              <Paper 
-                elevation={1} 
-                sx={{ 
-                  width: '100%',
-                  height: '100%',
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  aspectRatio: '1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: 0,
-                  m: 0,
-                  boxSizing: 'border-box',
-                  overflow: 'hidden',
-                }}
-              >
-                <Box sx={{ width: '100%', height: '100%' }}>
-                  <Calendar
-                    onDateSelect={handleDateSelect}
-                    selectedDate={selectedDate}
-                    reportCounts={reportCounts}
-                    loading={calendarLoading}
-                  />
-                </Box>
-              </Paper>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f7fafc', display: 'flex', flexDirection: 'column' }}>
+      {/* Main Content */}
+      <Box sx={{ flex: 1, height: { xs: `calc(100vh - ${HEADER_HEIGHT}px)`, md: `calc(100vh - ${HEADER_HEIGHT}px)` }, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%', maxWidth: '1600px', mx: 'auto', gap: { xs: 2, md: 2 }, pt: 2, px: 2 }}>
+        {/* Reports Section */}
+        <Box sx={{ width: { xs: '100%', md: '50%' }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Paper elevation={3} sx={{ borderRadius: 3, boxShadow: 3, p: { xs: 2, md: 4 }, width: '100%', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', bgcolor: 'white', flex: 1 }}>
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <ReportsList
+                reports={reports}
+                selectedDate={selectedDate || new Date()}
+                loading={reportsLoading}
+                error={error}
+              />
             </Box>
-          </Box>
+          </Paper>
         </Box>
-      </Container>
+        {/* Calendar Section */}
+        <Box sx={{ width: { xs: '100%', md: '50%' }, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Paper elevation={3} sx={{ borderRadius: 3, boxShadow: 3, p: { xs: 2, md: 4 }, width: '100%', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', bgcolor: 'white', flex: 1 }}>
+            <Calendar
+              selectedDate={selectedDate || new Date()}
+              onDateSelect={handleDateSelect}
+              reportCounts={reportCounts}
+              loading={calendarLoading}
+            />
+          </Paper>
+        </Box>
+      </Box>
     </Box>
   );
 };
