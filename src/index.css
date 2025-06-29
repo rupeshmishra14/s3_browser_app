@@ -22,11 +22,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
 /* Better focus styles for accessibility */
 *:focus {
   outline: 2px solid #FF9900;

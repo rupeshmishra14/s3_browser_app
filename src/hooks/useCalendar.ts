@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { listReports } from '../services/api';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 
@@ -14,11 +14,11 @@ export function useCalendar() {
   const isInitialized = useRef<boolean>(false);
 
   // Check if cache is valid
-  const isCacheValid = (monthKey: string) => {
+  const isCacheValid = useCallback((monthKey: string) => {
     const cached = reportCountsCache.get(monthKey);
     if (!cached) return false;
     return Date.now() - cached.timestamp < CACHE_DURATION;
-  };
+  }, []);
 
   // Smart fetch - only fetch for days that might have reports
   const fetchReportCounts = useCallback(async (date: Date) => {
@@ -49,8 +49,8 @@ export function useCalendar() {
     setReportCounts(counts);
 
     // Only fetch for recent days (last 7 days) and current month to reduce API calls
+    const today = new Date();
     const recentDays = days.filter(day => {
-      const today = new Date();
       const diffTime = Math.abs(today.getTime() - day.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays <= 7 || day.getMonth() === today.getMonth();
@@ -92,20 +92,23 @@ export function useCalendar() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isCacheValid]);
+
+  // Memoize the month key to prevent unnecessary fetches
+  const selectedMonthKey = useMemo(() => {
+    return selectedDate ? format(selectedDate, 'yyyy-MM') : '';
+  }, [selectedDate]);
 
   // Fetch counts when selected date changes (to get the month)
   useEffect(() => {
     if (selectedDate && isInitialized.current) {
-      const monthKey = format(selectedDate, 'yyyy-MM');
-      
       // Only fetch if month changed or cache is invalid
-      if (monthKey !== currentMonthKey.current || !isCacheValid(monthKey)) {
-        currentMonthKey.current = monthKey;
+      if (selectedMonthKey !== currentMonthKey.current || !isCacheValid(selectedMonthKey)) {
+        currentMonthKey.current = selectedMonthKey;
         fetchReportCounts(selectedDate);
       }
     }
-  }, [selectedDate, fetchReportCounts]);
+  }, [selectedDate, selectedMonthKey, fetchReportCounts, isCacheValid]);
 
   // Initialize with current month data when component mounts
   useEffect(() => {

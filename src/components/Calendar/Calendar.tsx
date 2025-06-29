@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -13,7 +13,7 @@ interface CalendarProps {
 
 const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportCounts = {}, loading = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -23,23 +23,27 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportC
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
-  const handlePreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const isWeekend = (date: Date) => {
+  const handlePreviousMonth = useCallback(() => setCurrentMonth(subMonths(currentMonth, 1)), [currentMonth]);
+  const handleNextMonth = useCallback(() => setCurrentMonth(addMonths(currentMonth, 1)), [currentMonth]);
+  
+  const isWeekend = useCallback((date: Date) => {
     const day = getDay(date);
     return day === 0 || day === 6;
-  };
-  const isToday = (date: Date) => isSameDay(date, today);
-  const isSelected = (date: Date) => isSameDay(date, selectedDate);
+  }, []);
+  
+  const isToday = useCallback((date: Date) => isSameDay(date, today), [today]);
+  const isSelected = useCallback((date: Date) => isSameDay(date, selectedDate), [selectedDate]);
 
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayNames = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], []);
+
+  const currentMonthFormatted = useMemo(() => format(currentMonth, 'MMMM yyyy'), [currentMonth]);
 
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'transparent' }}>
       {/* Month/Year and Navigation */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          {format(currentMonth, 'MMMM yyyy')}
+          {currentMonthFormatted}
         </Typography>
         <Box>
           <IconButton onClick={handlePreviousMonth} size="small" sx={{ mr: 1 }}>
@@ -64,11 +68,10 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportC
           const inMonth = isSameMonth(day, currentMonth);
           const weekend = isWeekend(day);
           const selected = isSelected(day);
-          const today = isToday(day);
+          const todayDate = isToday(day);
           const dateKey = format(day, 'yyyy-MM-dd');
-          const count = reportCounts && reportCounts[dateKey];
-          // Debug log
-          // console.log('Tile:', dateKey, 'Count:', count, 'reportCounts:', reportCounts);
+          const count = reportCounts[dateKey];
+          
           return (
             <Box
               key={idx}
@@ -89,7 +92,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportC
                   : 'grey.100',
                 bgcolor: selected
                   ? 'primary.main'
-                  : today
+                  : todayDate
                   ? 'primary.light'
                   : !inMonth
                   ? 'grey.100'
@@ -98,14 +101,14 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportC
                   : 'white',
                 color: selected
                   ? 'white'
-                  : today
+                  : todayDate
                   ? 'primary.main'
                   : !inMonth
                   ? 'grey.400'
                   : weekend
                   ? 'error.main'
                   : 'text.primary',
-                fontWeight: selected || today ? 700 : 500,
+                fontWeight: selected || todayDate ? 700 : 500,
                 fontSize: '1rem',
                 cursor: inMonth ? 'pointer' : 'default',
                 boxShadow: selected ? 2 : 0,

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import { format } from 'date-fns';
 import { getPresignedUrl } from '../../services/api';
 
-interface Report {
+interface ExtendedReport {
   id: string;
   title: string;
   type: string;
@@ -16,7 +16,7 @@ interface Report {
 }
 
 interface ReportsListProps {
-  reports: Report[];
+  reports: ExtendedReport[];
   selectedDate: Date;
   loading?: boolean;
   error?: string | null;
@@ -27,10 +27,11 @@ const getFileIcon = (type: string) => {
 };
 
 const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loading = false, error = null }) => {
-  const formatDate = (date: Date) =>
-    format(date, 'EEEE, MMMM d, yyyy');
+  const formatDate = useMemo(() => 
+    format(selectedDate, 'EEEE, MMMM d, yyyy'), [selectedDate]
+  );
 
-  const handleDownload = async (report: Report) => {
+  const handleDownload = useCallback(async (report: ExtendedReport) => {
     try {
       const url = await getPresignedUrl(
         format(selectedDate, 'yyyy-MM-dd'),
@@ -45,7 +46,7 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
     } catch (error) {
       alert('Download failed. Please try again.');
     }
-  };
+  }, [selectedDate]);
 
   return (
     <Box sx={{ width: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
@@ -56,7 +57,7 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
         </Box>
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-        {formatDate(selectedDate)}
+        {formatDate}
       </Typography>
       {loading ? (
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'grey.400' }}>
