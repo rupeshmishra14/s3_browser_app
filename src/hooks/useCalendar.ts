@@ -7,7 +7,7 @@ const reportCountsCache = new Map<string, { counts: Record<string, number>; time
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes cache
 
 export function useCalendar() {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [reportCounts, setReportCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const currentMonthKey = useRef<string>('');
@@ -20,11 +20,11 @@ export function useCalendar() {
     return Date.now() - cached.timestamp < CACHE_DURATION;
   }, []);
 
-  // Smart fetch - only fetch for days that might have reports
-  const fetchReportCounts = useCallback(async (date: Date) => {
+  // Fetch all reports for the month and use counts from backend if available
+  const fetchMonthReportCounts = useCallback(async (date: Date) => {
     const monthKey = format(date, 'yyyy-MM');
-    
-    // Check if we already have valid cached data
+    const monthPrefix = format(date, 'yyyy/MM/');
+
     if (isCacheValid(monthKey)) {
       const cached = reportCountsCache.get(monthKey);
       setReportCounts(cached!.counts);
@@ -32,63 +32,45 @@ export function useCalendar() {
     }
 
     setLoading(true);
-    
-    // Initialize with zeros for all days
+
+    // Initialize all days with 0
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const days = eachDayOfInterval({ start, end });
     const counts: Record<string, number> = {};
-    
-    // Initialize all days with 0
     days.forEach(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       counts[dateStr] = 0;
     });
 
-    // Set initial counts immediately (all zeros)
-    setReportCounts(counts);
-
-    // Only fetch for recent days (last 7 days) and current month to reduce API calls
-    const today = new Date();
-    const recentDays = days.filter(day => {
-      const diffTime = Math.abs(today.getTime() - day.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7 || day.getMonth() === today.getMonth();
-    });
-
-    // Make API calls only for recent days
-    const promises = recentDays.map(async (day) => {
-      try {
-        const prefix = format(day, 'yyyy/MM/dd');
-        const reports = await listReports(prefix);
-        const dateStr = format(day, 'yyyy-MM-dd');
-        return { dateStr, count: reports.length };
-      } catch (error) {
-        console.warn(`Failed to fetch reports for ${format(day, 'yyyy-MM-dd')}:`, error);
-        const dateStr = format(day, 'yyyy-MM-dd');
-        return { dateStr, count: 0 };
-      }
-    });
-
     try {
-      // Wait for all promises to resolve
-      const results = await Promise.all(promises);
-      
-      // Update counts with actual results
-      results.forEach(({ dateStr, count }) => {
-        counts[dateStr] = count;
-      });
-      
-      // Cache the results
-      reportCountsCache.set(monthKey, {
-        counts,
-        timestamp: Date.now()
-      });
-      
+      // Fetch all reports for the month
+      const response = await listReports(monthPrefix); // response may have .counts and .details
+      let backendCounts = response.counts;
+      if (backendCounts && typeof backendCounts === 'object') {
+        // Use backend counts directly
+        Object.entries(backendCounts).forEach(([dayStr, count]) => {
+          if (counts[dayStr] !== undefined) {
+            counts[dayStr] = count as number;
+          }
+        });
+      } else if (Array.isArray(response.details)) {
+        // Fallback: group details by day
+        response.details.forEach((report: any) => {
+          const match = report.path.match(/\d{4}\/\d{2}\/\d{2}/);
+          if (match) {
+            const [y, m, d] = match[0].split('/');
+            const dayStr = `${y}-${m}-${d}`;
+            if (counts[dayStr] !== undefined) {
+              counts[dayStr] += 1;
+            }
+          }
+        });
+      }
+      reportCountsCache.set(monthKey, { counts, timestamp: Date.now() });
       setReportCounts(counts);
     } catch (error) {
-      console.error('Failed to fetch report counts:', error);
-      // Keep the zero counts if all requests fail
+      console.error('Failed to fetch monthly report counts:', error);
     } finally {
       setLoading(false);
     }
@@ -102,13 +84,12 @@ export function useCalendar() {
   // Fetch counts when selected date changes (to get the month)
   useEffect(() => {
     if (selectedDate && isInitialized.current) {
-      // Only fetch if month changed or cache is invalid
       if (selectedMonthKey !== currentMonthKey.current || !isCacheValid(selectedMonthKey)) {
         currentMonthKey.current = selectedMonthKey;
-        fetchReportCounts(selectedDate);
+        fetchMonthReportCounts(selectedDate);
       }
     }
-  }, [selectedDate, selectedMonthKey, fetchReportCounts, isCacheValid]);
+  }, [selectedDate, selectedMonthKey, fetchMonthReportCounts, isCacheValid]);
 
   // Initialize with current month data when component mounts
   useEffect(() => {
@@ -116,22 +97,20 @@ export function useCalendar() {
       const today = new Date();
       const monthKey = format(today, 'yyyy-MM');
       currentMonthKey.current = monthKey;
-      
-      // Initialize with current month
+      // Initialize all days with 0
       const start = startOfMonth(today);
       const end = endOfMonth(today);
       const days = eachDayOfInterval({ start, end });
       const counts: Record<string, number> = {};
-      
       days.forEach(day => {
         const dateStr = format(day, 'yyyy-MM-dd');
         counts[dateStr] = 0;
       });
-      
       setReportCounts(counts);
       isInitialized.current = true;
+      fetchMonthReportCounts(today);
     }
-  }, []);
+  }, [fetchMonthReportCounts]);
 
   return { selectedDate, setSelectedDate, reportCounts, loading };
 } 

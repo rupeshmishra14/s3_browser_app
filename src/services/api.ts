@@ -9,9 +9,9 @@ interface Report {
   size: number;
 }
 
-export async function listReports(prefix: string): Promise<Report[]> {
+export async function listReports(prefix: string): Promise<any> {
   const res = await axios.get(`${API_BASE_URL}/list-reports`, { params: { prefix } });
-  return res.data.details;
+  return res.data;
 }
 
 export async function getPresignedUrl(date: string, report: string): Promise<string> {

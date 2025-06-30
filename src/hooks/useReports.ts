@@ -33,7 +33,8 @@ export function useReports(selectedDate: Date | null) {
     
     listReports(prefix)
       .then((apiReports) => {
-        const mapped = apiReports.map((r, idx) => {
+        const details = Array.isArray(apiReports.details) ? apiReports.details : [];
+        const mapped = details.map((r, idx) => {
           // Guess type from extension
           let type = 'OTHER';
           if (r.name.endsWith('.pdf')) type = 'PDF';
