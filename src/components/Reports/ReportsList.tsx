@@ -22,7 +22,7 @@ interface ReportsListProps {
   error?: string | null;
 }
 
-const getFileIcon = (type: string) => {
+const getFileIcon = () => {
   return <InsertDriveFileIcon sx={{ color: 'primary.main' }} />;
 };
 
@@ -74,10 +74,10 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
         </Box>
       ) : (
         <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
-          {reports.map((report, idx) => (
+          {reports.map((report) => (
             <Box key={report.id} sx={{ border: '1px solid', borderColor: 'grey.200', borderRadius: 2, p: 2, mb: 2, bgcolor: 'grey.50', '&:hover': { bgcolor: 'grey.100' } }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ mr: 2 }}>{getFileIcon(report.type)}</Box>
+                <Box sx={{ mr: 2 }}>{getFileIcon()}</Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontWeight: 500, color: 'text.primary' }}>{report.title}</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>

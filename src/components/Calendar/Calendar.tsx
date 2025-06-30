@@ -8,10 +8,9 @@ interface CalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   reportCounts?: Record<string, number>;
-  loading?: boolean;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportCounts = {}, loading = false }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportCounts = {} }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = useMemo(() => new Date(), []);
 

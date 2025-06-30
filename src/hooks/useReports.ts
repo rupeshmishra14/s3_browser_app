@@ -41,12 +41,14 @@ export function useReports(selectedDate: Date | null) {
           else if (r.name.endsWith('.xlsx')) type = 'XLSX';
           else if (r.name.endsWith('.docx')) type = 'DOCX';
           
-          // Format size
-          let sizeStr = r.size;
+          // Format size as string
+          let sizeStr = '';
           if (typeof r.size === 'number') {
             if (r.size > 1024 * 1024) sizeStr = (r.size / (1024 * 1024)).toFixed(1) + ' MB';
             else if (r.size > 1024) sizeStr = (r.size / 1024).toFixed(1) + ' KB';
             else sizeStr = r.size + ' B';
+          } else if (typeof r.size === 'string') {
+            sizeStr = r.size;
           }
           
           return {

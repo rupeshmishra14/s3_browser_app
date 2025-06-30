@@ -1,13 +1,12 @@
 import React, { useCallback, useMemo } from 'react';
-import { Box, Paper, useMediaQuery } from '@mui/material';
+import { Box, Paper } from '@mui/material';
 import Calendar from './components/Calendar/Calendar';
 import ReportsList from './components/Reports/ReportsList';
 import { useCalendar } from './hooks/useCalendar';
 import { useReports } from './hooks/useReports';
 
 const App: React.FC = () => {
-  const isMdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
-  const { selectedDate, setSelectedDate, reportCounts, loading: calendarLoading } = useCalendar();
+  const { selectedDate, setSelectedDate, reportCounts } = useCalendar();
   const { reports, loading: reportsLoading, error } = useReports(selectedDate);
 
   const handleDateSelect = useCallback((date: Date) => {
@@ -40,7 +39,6 @@ const App: React.FC = () => {
               selectedDate={selectedDateForDisplay}
               onDateSelect={handleDateSelect}
               reportCounts={reportCounts}
-              loading={calendarLoading}
             />
           </Paper>
         </Box>
