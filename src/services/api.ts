@@ -9,7 +9,15 @@ interface Report {
   size: number;
 }
 
-export async function listReports(prefix: string): Promise<any> {
+export interface ListReportsResponse {
+  reports: string[];
+  prefix: string;
+  details: Report[];
+  counts?: Record<string, number>;
+  debug?: any;
+}
+
+export async function listReports(prefix: string): Promise<ListReportsResponse> {
   const res = await axios.get(`${API_BASE_URL}/list-reports`, { params: { prefix } });
   return res.data;
 }

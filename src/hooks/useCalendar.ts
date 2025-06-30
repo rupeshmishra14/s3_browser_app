@@ -45,7 +45,7 @@ export function useCalendar() {
 
     try {
       // Fetch all reports for the month
-      const response = await listReports(monthPrefix); // response may have .counts and .details
+      const response = await listReports(monthPrefix);
       let backendCounts = response.counts;
       if (backendCounts && typeof backendCounts === 'object') {
         // Use backend counts directly
@@ -56,7 +56,7 @@ export function useCalendar() {
         });
       } else if (Array.isArray(response.details)) {
         // Fallback: group details by day
-        response.details.forEach((report: any) => {
+        response.details.forEach((report: { path: string }) => {
           const match = report.path.match(/\d{4}\/\d{2}\/\d{2}/);
           if (match) {
             const [y, m, d] = match[0].split('/');
