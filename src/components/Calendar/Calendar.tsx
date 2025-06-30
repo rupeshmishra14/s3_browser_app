@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -9,19 +9,11 @@ interface CalendarProps {
   onDateSelect: (date: Date) => void;
   reportCounts?: Record<string, number>;
   loading?: boolean;
-  onMonthChange?: (month: Date) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportCounts = {}, loading = false, onMonthChange }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportCounts = {}, loading = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = useMemo(() => new Date(), []);
-
-  // Notify parent when current month changes
-  useEffect(() => {
-    if (onMonthChange) {
-      onMonthChange(currentMonth);
-    }
-  }, [currentMonth, onMonthChange]);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -31,15 +23,8 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reportC
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
-  const handlePreviousMonth = useCallback(() => {
-    const newMonth = subMonths(currentMonth, 1);
-    setCurrentMonth(newMonth);
-  }, [currentMonth]);
-  
-  const handleNextMonth = useCallback(() => {
-    const newMonth = addMonths(currentMonth, 1);
-    setCurrentMonth(newMonth);
-  }, [currentMonth]);
+  const handlePreviousMonth = useCallback(() => setCurrentMonth(subMonths(currentMonth, 1)), [currentMonth]);
+  const handleNextMonth = useCallback(() => setCurrentMonth(addMonths(currentMonth, 1)), [currentMonth]);
   
   const isWeekend = useCallback((date: Date) => {
     const day = getDay(date);

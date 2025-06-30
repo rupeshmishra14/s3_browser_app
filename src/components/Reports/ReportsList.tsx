@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback, useState } from 'react';
-import { Box, Typography, IconButton, Snackbar, Alert } from '@mui/material';
+import React, { useMemo, useCallback } from 'react';
+import { Box, Typography, IconButton } from '@mui/material';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import { format } from 'date-fns';
@@ -27,12 +27,6 @@ const getFileIcon = (type: string) => {
 };
 
 const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loading = false, error = null }) => {
-  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
-
   const formatDate = useMemo(() => 
     format(selectedDate, 'EEEE, MMMM d, yyyy'), [selectedDate]
   );
@@ -49,24 +43,10 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      setNotification({
-        open: true,
-        message: `Download started for ${report.title}`,
-        severity: 'success'
-      });
     } catch (error) {
-      setNotification({
-        open: true,
-        message: 'Download failed. Please try again.',
-        severity: 'error'
-      });
+      alert('Download failed. Please try again.');
     }
   }, [selectedDate]);
-
-  const handleCloseNotification = useCallback(() => {
-    setNotification(prev => ({ ...prev, open: false }));
-  }, []);
 
   return (
     <Box sx={{ width: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
@@ -114,18 +94,6 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
           ))}
         </Box>
       )}
-      
-      {/* Notification Snackbar */}
-      <Snackbar
-        open={notification.open}
-        autoHideDuration={6000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }}>
-          {notification.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
