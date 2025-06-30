@@ -73,7 +73,7 @@ const ReportsList: React.FC<ReportsListProps> = ({ reports, selectedDate, loadin
           <Typography>No reports available for this date</Typography>
         </Box>
       ) : (
-        <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', pr: 1, maxHeight: '70vh' }}>
           {reports.map((report) => (
             <Box key={report.id} sx={{ border: '1px solid', borderColor: 'grey.200', borderRadius: 2, p: 2, mb: 2, bgcolor: 'grey.50', '&:hover': { bgcolor: 'grey.100' } }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
