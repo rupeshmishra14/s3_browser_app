@@ -7,12 +7,16 @@ import { useReports } from './hooks/useReports';
 
 const App: React.FC = () => {
   const isMdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
-  const { selectedDate, setSelectedDate, reportCounts, loading: calendarLoading } = useCalendar();
+  const { selectedDate, setSelectedDate, currentDisplayMonth, setCurrentDisplayMonth, reportCounts, loading: calendarLoading } = useCalendar();
   const { reports, loading: reportsLoading, error } = useReports(selectedDate);
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
   }, [setSelectedDate]);
+
+  const handleMonthChange = useCallback((month: Date) => {
+    setCurrentDisplayMonth(month);
+  }, [setCurrentDisplayMonth]);
 
   const selectedDateForDisplay = useMemo(() => selectedDate || new Date(), [selectedDate]);
 
@@ -39,6 +43,7 @@ const App: React.FC = () => {
             <Calendar
               selectedDate={selectedDateForDisplay}
               onDateSelect={handleDateSelect}
+              onMonthChange={handleMonthChange}
               reportCounts={reportCounts}
               loading={calendarLoading}
             />
